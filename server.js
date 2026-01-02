@@ -42,7 +42,7 @@ app.post('/api/chat', async (req, res) => {
 
     try {
         // 1. Get the bot's "Knowledge Base" (Context) from Supabase
-        const { data: bot, error } = await _supabase
+        const { data: bot, error } = await supabase
             .from('chatbots')
             .select('context')
             .eq('id', botId)
@@ -325,3 +325,4 @@ process.on('SIGTERM', () => {
         process.exit(0);
     });
 });
+
