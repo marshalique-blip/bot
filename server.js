@@ -3,10 +3,12 @@ const express = require('express');
 const cors = require('cors');
 const { createServer } = require('http');
 const { createClient } = require('@supabase/supabase-js');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // 2. ENVIRONMENT VARIABLES - Validate before using
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Validate environment variables (with helpful warnings)
 if (!SUPABASE_URL || !SUPABASE_KEY) {
@@ -34,6 +36,39 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // 5. ROUTES
+
+app.post('/api/chat', async (req, res) => {
+    const { message, botId } = req.body;
+
+    try {
+        // 1. Get the bot's "Knowledge Base" (Context) from Supabase
+        const { data: bot, error } = await _supabase
+            .from('chatbots')
+            .select('context')
+            .eq('id', botId)
+            .single();
+
+        if (error || !bot) return res.status(404).json({ reply: "Bot not found." });
+
+        // 2. Prepare the AI
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        
+        // 3. Create the prompt (The instructions for the AI)
+        const prompt = `You are a helpful assistant. Use this Knowledge: "${bot.context}". 
+                        User asks: "${message}". 
+                        Answer briefly based ONLY on the knowledge provided.`;
+
+        // 4. Generate the response
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        res.json({ reply: text });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ reply: "I'm having trouble thinking. Check Render logs!" });
+    }
+});
 
 // Health check route
 app.get('/health', (req, res) => {
