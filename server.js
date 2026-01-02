@@ -2,6 +2,12 @@
 const express = require('express');
 const cors = require('cors');
 const { createServer } = require('http');
+const { createClient } = require('@supabase/supabase-js'); // Import Supabase client
+
+// Initialize Supabase client
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY); // Create Supabase client
 
 // 2. INITIALIZE (The "app")
 const app = express(); // <--- This MUST come before you use "app.use"
@@ -11,7 +17,6 @@ const httpServer = createServer(app);
 app.use(cors({ origin: '*' })); // Now 'app' is defined and this will work!
 app.use(express.json());        // Allows your server to read JSON data
 app.use(express.static('public')); // Serves your maker.html and widget.js
-
 
 // Route to save a new bot from your Maker UI
 app.post('/api/create-bot', async (req, res) => {
@@ -27,5 +32,4 @@ app.get('/api/get-bot', async (req, res) => {
     const { data, error } = await _supabase.from('chatbots').select('*').eq('id', id).single();
     if (error) return res.status(404).json({ error: "Bot not found" });
     res.json(data);
-
 });
