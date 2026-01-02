@@ -69,26 +69,34 @@
     </div>
 
     <script>
-        // Dynamic Preview Logic
-        const inputs = ['botName', 'botGreet'];
-        inputs.forEach(id => {
-            document.getElementById(id).addEventListener('input', (e) => {
-                const targetId = id === 'botName' ? 'previewName' : 'previewGreet';
-                document.getElementById(targetId).innerText = e.target.value || "...";
-                if(id === 'botName') document.getElementById('previewIcon').innerText = e.target.value.charAt(0).toUpperCase();
-            });
+     async function saveBot() {
+    const botConfig = {
+        name: document.getElementById('botName').value,
+        greeting: document.getElementById('botGreet').value,
+        context: document.getElementById('botContext').value
+    };
+
+    try {
+        // REPLACE the URL below with your actual Render URL
+        const response = await fetch('https://bot-8yai.onrender.com/api/create-bot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(botConfig)
         });
 
-        async function saveBot() {
-            const botConfig = {
-                name: document.getElementById('botName').value,
-                greeting: document.getElementById('botGreet').value,
-                context: document.getElementById('botContext').value
-            };
-            
-            console.log("Saving to Supabase:", botConfig);
-            alert("Bot Config Saved! (Connect your server.js to store this permanently)");
+        const result = await response.json();
+
+        if (result.success) {
+            alert("✅ Successfully saved to Supabase! Bot ID: " + result.id);
+        } else {
+            alert("❌ Server reached, but Supabase error: " + result.error);
         }
+    } catch (error) {
+        console.error("Connection Error:", error);
+        alert("❌ Could not reach the server. Is your Render URL correct?");
+    }
+}
     </script>
 </body>
+
 </html>
