@@ -8,15 +8,17 @@ const { createClient } = require('@supabase/supabase-js');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
-// Validate environment variables
+// Validate environment variables (with helpful warnings)
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-    console.error('❌ ERROR: Missing required environment variables!');
-    console.error('Please set SUPABASE_URL and SUPABASE_KEY');
-    process.exit(1);
+    console.warn('⚠️  WARNING: Missing SUPABASE_URL or SUPABASE_KEY');
+    console.warn('📝 Server will start but database operations will fail');
+    console.warn('💡 Set environment variables in Render dashboard');
 }
 
-// Initialize Supabase client
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+// Initialize Supabase client (will be null if env vars missing)
+const supabase = SUPABASE_URL && SUPABASE_KEY 
+    ? createClient(SUPABASE_URL, SUPABASE_KEY)
+    : null;
 
 // 3. INITIALIZE (The "app")
 const app = express();
@@ -41,6 +43,14 @@ app.get('/health', (req, res) => {
 // Route to save a new bot from your Maker UI
 app.post('/api/create-bot', async (req, res) => {
     try {
+        // Check if Supabase is configured
+        if (!supabase) {
+            return res.status(503).json({ 
+                success: false, 
+                error: 'Database not configured. Please set SUPABASE_URL and SUPABASE_KEY.' 
+            });
+        }
+
         const { name, greeting, context } = req.body;
         
         // Validate input
@@ -92,6 +102,13 @@ app.post('/api/create-bot', async (req, res) => {
 // Route for the widget to load bot settings
 app.get('/api/get-bot', async (req, res) => {
     try {
+        // Check if Supabase is configured
+        if (!supabase) {
+            return res.status(503).json({ 
+                error: 'Database not configured. Please set SUPABASE_URL and SUPABASE_KEY.' 
+            });
+        }
+
         const { id } = req.query;
 
         // Validate input
@@ -126,6 +143,14 @@ app.get('/api/get-bot', async (req, res) => {
 // Route to get all bots (useful for listing in maker UI)
 app.get('/api/list-bots', async (req, res) => {
     try {
+        // Check if Supabase is configured
+        if (!supabase) {
+            return res.status(503).json({ 
+                success: false, 
+                error: 'Database not configured. Please set SUPABASE_URL and SUPABASE_KEY.' 
+            });
+        }
+
         const { data, error } = await supabase
             .from('chatbots')
             .select('*')
@@ -155,6 +180,14 @@ app.get('/api/list-bots', async (req, res) => {
 // Route to update a bot
 app.put('/api/update-bot/:id', async (req, res) => {
     try {
+        // Check if Supabase is configured
+        if (!supabase) {
+            return res.status(503).json({ 
+                success: false, 
+                error: 'Database not configured. Please set SUPABASE_URL and SUPABASE_KEY.' 
+            });
+        }
+
         const { id } = req.params;
         const { name, greeting, context } = req.body;
 
@@ -195,6 +228,14 @@ app.put('/api/update-bot/:id', async (req, res) => {
 // Route to delete a bot
 app.delete('/api/delete-bot/:id', async (req, res) => {
     try {
+        // Check if Supabase is configured
+        if (!supabase) {
+            return res.status(503).json({ 
+                success: false, 
+                error: 'Database not configured. Please set SUPABASE_URL and SUPABASE_KEY.' 
+            });
+        }
+
         const { id } = req.params;
 
         const { error } = await supabase
@@ -232,11 +273,13 @@ app.use((req, res) => {
 
 // 6. START SERVER
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0'; // CRITICAL for Render/Railway/Heroku
 
-httpServer.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
+httpServer.listen(PORT, HOST, () => {
+    console.log(`✅ Server running on ${HOST}:${PORT}`);
     console.log(`📍 Health check: http://localhost:${PORT}/health`);
     console.log(`🤖 API Base URL: http://localhost:${PORT}/api`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 // Graceful shutdown
