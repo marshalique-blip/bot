@@ -111,7 +111,7 @@ app.post('/api/chat', async (req, res) => {
 
         // 2. Prepare the AI model
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash-latest",
+            model: "gemini-2.5-flash",
             generationConfig: {
                 temperature: 0.7,
                 maxOutputTokens: 500,
@@ -420,4 +420,5 @@ process.on('SIGTERM', () => {
         process.exit(0);
     });
 });
+
 
