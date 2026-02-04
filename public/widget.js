@@ -46,7 +46,8 @@ style.innerHTML = `
     /* DESKTOP/LAPTOP - Bottom right corner window */
     #bot-window { 
         width: 400px; 
-        height: 600px; 
+        height: 600px;
+        margin-top: 50px;
         background: white; 
         border-radius: 16px;
         display: none; 
@@ -410,4 +411,5 @@ lucide.createIcons();
     console.log('🤖 Bot ID:', botId);
     console.log('🌐 API URL:', BASE_URL);
 })();
+
 
