@@ -39,21 +39,21 @@ style.innerHTML = `
         stroke: white;
         fill: none;
     }
+    #bot-bubble.hidden {
+        display: none;
+    }
+    
+    /* DESKTOP/LAPTOP - Bottom right corner window */
     #bot-window { 
-        width: 100vw;
-        height: 100vh;
-        height: 100dvh;
+        width: 400px; 
+        height: 600px; 
         background: white; 
-        border-radius: 0;
+        border-radius: 16px;
         display: none; 
         flex-direction: column; 
-        box-shadow: none;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         overflow: hidden; 
-        margin-bottom: 0;
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 10000;
+        margin-bottom: 10px;
         animation: slideUp 0.3s ease;
     }
 
@@ -61,6 +61,7 @@ style.innerHTML = `
         from { transform: translateY(20px); opacity: 0; }
         to { transform: translateY(0); opacity: 1; }
     }
+    
     #bot-header { 
         background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%);
         color: white; 
@@ -105,7 +106,6 @@ style.innerHTML = `
     #bot-input-area { 
         border-top: 1px solid #E2E8F0; 
         padding: 12px; 
-        padding-bottom: max(12px, env(safe-area-inset-bottom));
         display: flex; 
         gap: 8px;
         background: white;
@@ -199,8 +199,48 @@ style.innerHTML = `
         border: 1px solid #FCA5A5;
     }
 
-    #bot-bubble.hidden {
-        display: none;
+    /* MOBILE - Full viewport */
+    @media (max-width: 768px) {
+        #bot-container {
+            bottom: 0 !important;
+            right: 0 !important;
+        }
+        #bot-bubble {
+            bottom: 16px;
+            right: 16px;
+        }
+        #bot-window {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            border-radius: 0;
+            margin-bottom: 0;
+            z-index: 10000;
+            max-width: none;
+            max-height: none;
+        }
+        #bot-input-area {
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+        }
+    }
+
+    /* TABLET - Slightly larger corner window */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        #bot-window {
+            width: 420px;
+            height: 650px;
+        }
+    }
+
+    /* LARGE DESKTOP - Even larger corner window */
+    @media (min-width: 1440px) {
+        #bot-window {
+            width: 450px;
+            height: 700px;
+        }
     }
 `;
 document.head.appendChild(style);
@@ -370,3 +410,4 @@ lucide.createIcons();
     console.log('🤖 Bot ID:', botId);
     console.log('🌐 API URL:', BASE_URL);
 })();
+
