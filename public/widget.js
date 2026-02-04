@@ -28,6 +28,9 @@ style.innerHTML = `
         justify-content: center; 
         box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4); 
         transition: all 0.3s ease;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
     }
     #bot-bubble:hover { 
         transform: scale(1.1); 
@@ -43,19 +46,27 @@ style.innerHTML = `
         display: none;
     }
     
-    /* DESKTOP/LAPTOP - Bottom right corner window */
+    /* Move bubble to the left when window is open (desktop only) */
+    #bot-bubble.window-open {
+        right: 440px; /* 400px window + 20px gap + 20px bubble margin */
+    }
+    
+    /* DESKTOP/LAPTOP - Bottom right corner window with padding and navbar clearance */
     #bot-window { 
+        position: fixed;
         width: 400px; 
-        height: 600px;
-        margin-top: 50px;
+        height: calc(100vh - 120px); /* Full height minus navbar space and bottom margin */
+        max-height: 700px; /* Cap maximum height */
+        bottom: 20px;
+        right: 20px;
         background: white; 
         border-radius: 16px;
         display: none; 
         flex-direction: column; 
         box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         overflow: hidden; 
-        margin-bottom: 10px;
         animation: slideUp 0.3s ease;
+        z-index: 10000;
     }
 
     @keyframes slideUp {
@@ -72,6 +83,7 @@ style.innerHTML = `
         justify-content: space-between; 
         align-items: center;
         font-size: 16px;
+        flex-shrink: 0;
     }
     #close-bot {
         cursor: pointer;
@@ -110,6 +122,7 @@ style.innerHTML = `
         display: flex; 
         gap: 8px;
         background: white;
+        flex-shrink: 0;
     }
     #bot-input { 
         flex: 1; 
@@ -117,7 +130,7 @@ style.innerHTML = `
         padding: 10px 14px; 
         border-radius: 8px; 
         outline: none;
-        font-size: 14px;
+        font-size: 16px; /* Prevent iOS zoom on focus */
         transition: border-color 0.2s;
     }
     #bot-input:focus {
@@ -200,15 +213,19 @@ style.innerHTML = `
         border: 1px solid #FCA5A5;
     }
 
-    /* MOBILE - Full viewport */
+    /* MOBILE - Full viewport with keyboard handling */
     @media (max-width: 768px) {
         #bot-container {
             bottom: 0 !important;
             right: 0 !important;
         }
         #bot-bubble {
+            position: fixed;
             bottom: 16px;
             right: 16px;
+        }
+        #bot-bubble.window-open {
+            right: 16px; /* Don't move on mobile */
         }
         #bot-window {
             position: fixed;
@@ -217,22 +234,34 @@ style.innerHTML = `
             width: 100vw;
             height: 100vh;
             height: 100dvh;
-            border-radius: 0;
-            margin-bottom: 0;
-            z-index: 10000;
-            max-width: none;
             max-height: none;
+            border-radius: 0;
+            bottom: auto;
+            right: auto;
+            z-index: 10000;
+        }
+        #bot-input {
+            font-size: 16px; /* Prevent iOS zoom */
         }
         #bot-input-area {
             padding-bottom: max(12px, env(safe-area-inset-bottom));
         }
+        /* Prevent body scroll when chat is open on mobile */
+        body.chat-open {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
     }
 
-    /* TABLET - Slightly larger corner window */
+    /* TABLET - Larger corner window */
     @media (min-width: 769px) and (max-width: 1024px) {
         #bot-window {
             width: 420px;
-            height: 650px;
+            max-height: 650px;
+        }
+        #bot-bubble.window-open {
+            right: 460px; /* 420px window + 20px gap + 20px bubble margin */
         }
     }
 
@@ -240,7 +269,10 @@ style.innerHTML = `
     @media (min-width: 1440px) {
         #bot-window {
             width: 450px;
-            height: 700px;
+            max-height: 750px;
+        }
+        #bot-bubble.window-open {
+            right: 490px; /* 450px window + 20px gap + 20px bubble margin */
         }
     }
 `;
@@ -277,6 +309,7 @@ lucide.createIcons();
     const botInput = document.getElementById('bot-input');
     const botNameHeader = document.getElementById('bot-name');
     const sendBtn = document.getElementById('bot-send-btn');
+
 
     // 4. LOAD BOT SETTINGS FROM SERVER
     fetch(`${BASE_URL}/api/get-bot?id=${botId}`)
@@ -318,31 +351,35 @@ lucide.createIcons();
     }
 
     // 7. TOGGLE WINDOW
-    // 7. TOGGLE WINDOW (Updated for Fullscreen)
-    const toggleBot = () => {
-        const isMobile = window.innerWidth <= 600;
-        const isOpen = botWindow.style.display === 'flex' || botWindow.classList.contains('fullscreen-active');
+botBubble.addEventListener('click', function() {
+    if (botWindow.style.display === 'flex') {
+        botWindow.style.display = 'none';
+        botBubble.classList.remove('window-open');
+        document.body.classList.remove('chat-open');
+    } else {
+        botWindow.style.display = 'flex';
+        botBubble.classList.add('window-open');
+        document.body.classList.add('chat-open');
+        
+        // Auto-focus input and scroll to it on mobile
+        setTimeout(() => {
+            botInput.focus();
+            botInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+    }
+});
 
-        if (!isOpen) {
-            // OPENING
-            botWindow.style.display = 'flex';
-            if (isMobile) {
-                botWindow.classList.add('fullscreen-active');
-                botBubble.classList.add('hidden');
-                document.body.style.overflow = 'hidden'; // Stop background scroll
-            }
-            setTimeout(() => botInput.focus(), 100);
-        } else {
-            // CLOSING
-            botWindow.style.display = 'none';
-            botWindow.classList.remove('fullscreen-active');
-            botBubble.classList.remove('hidden');
-            document.body.style.overflow = ''; // Restore scroll
-        }
-    };
+// Close button
+document.getElementById('close-bot').addEventListener('click', function() {
+    botWindow.style.display = 'none';
+    botBubble.classList.remove('window-open');
+    document.body.classList.remove('chat-open');
+});
 
-    botBubble.onclick = toggleBot;
-    document.getElementById('close-bot').onclick = toggleBot;
+// Focus input when clicking anywhere in the input area (mobile helper)
+document.getElementById('bot-input-area').addEventListener('click', function() {
+    botInput.focus();
+});
 
     
     // 8. HANDLE SENDING MESSAGE
@@ -411,5 +448,6 @@ lucide.createIcons();
     console.log('🤖 Bot ID:', botId);
     console.log('🌐 API URL:', BASE_URL);
 })();
+
 
 
